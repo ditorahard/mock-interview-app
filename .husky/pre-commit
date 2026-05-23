@@ -1,3 +1,13 @@
-# .husky/pre-commit
-prettier $(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g') --write --ignore-unknown
-git update-index --again
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run unit tests before commit
+echo "Running tests..."
+if command -v pnpm >/dev/null 2>&1; then
+	pnpm test
+elif command -v npm >/dev/null 2>&1; then
+	npm test
+else
+	echo "No package manager found (pnpm/npm). Skipping tests."
+fi
+
