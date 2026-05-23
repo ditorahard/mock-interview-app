@@ -7,4 +7,4 @@ describe('App', () => {
   it('renders App component', () => {
     render(<App />);
   });
-});
+}); 
