@@ -1,4 +1,8 @@
 import './App.css'
+import { useState } from "react";
+import { useProducts } from './hooks/useProducts';
+import { useDebouncedValue } from './hooks/useDebouncedValue';
+import { useFilteredSortedProducts, type SortKey } from './hooks/useFilteredSortedProducts';
 
 type Product = {
   id: number
@@ -32,7 +36,24 @@ const mockProducts: Product[] = [
   },
 ]
 
+
+
 export default function App() {
+  const { products, loading, error } = useProducts();
+  const [category, setCategory] = useState<string>('all');
+  const [search, setSearch] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortKey>('none');
+
+  // Debounce the search term to avoid filtering on every keystroke
+  const debouncedSearch = useDebouncedValue(search, 300);
+
+  const filteredProducts = useFilteredSortedProducts(
+    products,
+    category,
+    debouncedSearch,
+    sortBy
+  );
+
   return (
     <div className="container">
       <h1>Product Explorer</h1>
@@ -41,19 +62,56 @@ export default function App() {
         <input
           type="text"
           placeholder="Search products..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+          }}
         />
 
-        <select>
+        <select
+           value={category}
+           onChange={(e) => {
+             setCategory(e.target.value);
+           }}
+        >
           <option value="all">All</option>
-          <option value="electronics">Electronics</option>
+          <option value="women's clothing">Women's Clothing</option>
           <option value="men's clothing">
             Men's Clothing
           </option>
         </select>
+
+        <select
+          aria-label="Sort products"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+        >
+          <option value="none">Relevance</option>
+          <option value="title-asc">Title (A→Z)</option>
+          <option value="title-desc">Title (Z→A)</option>
+          <option value="price-asc">Price (Low→High)</option>
+          <option value="price-desc">Price (High→Low)</option>
+        </select>
       </div>
 
-      <div className="product-grid">
-      </div>
+
+      {loading && <p>Loading products...</p>}
+      {error && <p role="alert">{error}</p>}
+      {!loading && !error && filteredProducts.length === 0 && (
+        <p>No products found.</p>
+      )}
+
+      {!loading && !error && filteredProducts.length > 0 && (
+        <div className="product-grid">
+          {filteredProducts.map((item) => {
+            return (
+              <div key={item.id} className="product-card">
+                {item.title}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   )
 }
